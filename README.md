@@ -1,6 +1,6 @@
 # Menari OS
 
-A simple hobby operating system project, built from scratch to understand the fundamentals of OS development.
+A simple hobby operating system project, built from scratch to understand the fundamentals of OS development and limit-test a graduation student capabilites.
 
 ## Features
 
