@@ -1,1 +1,1 @@
-feat: Implement interactive command line
+fix: Stabilize kernel with correct interrupt handling

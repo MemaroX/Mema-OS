@@ -9,7 +9,7 @@ start:
     mov ds, ax
     mov es, ax
 
-    lidt [idt_descriptor]
+    call setup_idt
     sti
 
     call clear_screen
@@ -24,10 +24,10 @@ hang:
 
 keyboard_handler:
     pusha
-    in al, 0x60 
+    in al, 0x60
 
-    cmp al, 0x80 
-    jge .done
+    cmp al, 0x80
+    jge .key_release
 
     movzx ebx, al
     mov al, [scancode_map + ebx]
@@ -40,20 +40,16 @@ keyboard_handler:
     je .handle_enter
 
     mov ebx, [buffer_pos]
-    cmp ebx, 78 
+    cmp ebx, 78
     jge .done
     mov [command_buffer + ebx], al
     inc dword [buffer_pos]
     call print_char
 
-.done:
-    popa
-    iret
-
 .handle_backspace:
     mov ebx, [buffer_pos]
     cmp ebx, 0
-    je .done 
+    je .done
     dec dword [buffer_pos]
     call print_backspace
     jmp .done
@@ -66,10 +62,19 @@ keyboard_handler:
     call print_string
     jmp .done
 
+.key_release:
+    ; Do nothing for now
+
+.done:
+    mov al, 0x20
+    out 0x20, al
+    popa
+    iret
+
 process_command:
     pusha
     mov ebx, [buffer_pos]
-    mov byte [command_buffer + ebx], 0 
+    mov byte [command_buffer + ebx], 0
     mov si, command_buffer
     mov di, cmd_help
     call strcmp
@@ -155,8 +160,8 @@ print_newline:
 print_backspace:
     pusha
     mov ebx, [cursor_pos]
-    cmp ebx, 0
-    je .done
+    cmp ebx, 2
+    jl .done
     sub dword [cursor_pos], 2
     mov ebx, [cursor_pos]
     mov byte [VIDEO_MEMORY + ebx], ' '
@@ -173,25 +178,42 @@ clear_screen:
     mov byte [edi+1], WHITE_ON_BLACK
     add edi, 2
     loop .loop
-    mov dword [cursor_pos], 0
+    mov dword [cursor_pos], VIDEO_MEMORY
     popa
     ret
 
+setup_idt:
+    mov edi, idt_start
+    mov ecx, 256
+.init_idt_loop:
+    mov dword [edi], 0
+    mov dword [edi+4], 0
+    add edi, 8
+    loop .init_idt_loop
+
+    mov eax, keyboard_handler
+    mov ebx, 9 * 8 ; INT 9 (keyboard)
+    mov [idt_start + ebx], ax
+    mov word [idt_start + ebx + 2], 0x08
+    mov byte [idt_start + ebx + 4], 0
+    mov byte [idt_start + ebx + 5], 0x8E
+    shr eax, 16
+    mov [idt_start + ebx + 6], ax
+
+    lidt [idt_descriptor]
+    ret
+
 idt_descriptor:
-    dw idt_end - idt_start - 1
+    dw 256 * 8 - 1
     dd idt_start
 
-idt_start:
-    dw keyboard_handler, 0x08
-    db 0, 0x8E
-    dw 0
-idt_end:
+idt_start: times 256 * 8 db 0
 
 cursor_pos dd VIDEO_MEMORY
 buffer_pos dd 0
 command_buffer: times 80 db 0
 
-msg_welcome: db 'Mema-OS v0.02 | Type "help" for commands.', 0
+msg_welcome: db 'Mema-OS v0.03 | Interactive Mode Enabled', 0
 msg_prompt: db '> ', 0
 msg_help: db 'Commands: help, cls', 0
 msg_unknown_cmd: db 'Unknown command.', 0
@@ -203,5 +225,5 @@ scancode_map:
     db 0, 0, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0x08, 0
     db 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', 0x0d, 0
     db 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '''', '`', 0
-    db '', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0
+    db '\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0
     db ' ', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
