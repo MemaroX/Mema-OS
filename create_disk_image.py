@@ -26,10 +26,6 @@ def create_image():
     elif len(boot_sector) > BOOT_SECTOR_SIZE:
         boot_sector = boot_sector[:BOOT_SECTOR_SIZE]
 
-    # Add magic number to boot sector
-    boot_sector = bytearray(boot_sector)
-    boot_sector[BOOT_SECTOR_SIZE - 2:] = b'\x55\xAA'
-
     with open(disk_img_path, 'wb') as f:
         f.write(boot_sector)
         f.write(kernel_sector)
