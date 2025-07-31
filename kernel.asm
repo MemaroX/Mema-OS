@@ -109,6 +109,11 @@ process_command:
     call strcmp
     jc .is_panic
 
+    mov si, command_buffer
+    mov di, cmd_read
+    call strcmp
+    jc .is_read
+
     mov si, msg_unknown_cmd
     call print_string
     jmp .end_process
@@ -120,6 +125,11 @@ process_command:
 
 .is_cls:
     call clear_screen
+    jmp .end_process
+
+.is_read:
+    mov si, command_buffer + 5 ; Skip "read "
+    call read_file
     jmp .end_process
 
 .is_reboot:
@@ -140,6 +150,61 @@ process_command:
 
 .end_process:
     call print_newline
+    popa
+    ret
+
+read_file:
+    pusha
+    ; Simple file table at sector 20
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, 20
+    mov dh, 0
+    mov dl, 0
+    mov bx, 0x9000
+    int 0x13
+    jc .disk_error
+
+    ; Find the file
+    mov edi, 0x9000
+.find_loop:
+    mov esi, edi
+    mov ecx, 10 ; Max filename length
+    repe cmpsb
+    je .found
+    ; Not found, move to the next entry
+    add edi, 11
+    cmp edi, 0x9000 + 512
+    jl .find_loop
+    jmp .not_found
+
+.found:
+    ; Read the file
+    mov al, [edi]
+    mov ah, 0x02
+    mov ch, 0
+    mov cl, al
+    mov dh, 0
+    mov dl, 0
+    mov bx, 0x9200
+    int 0x13
+    jc .disk_error
+
+    mov si, 0x9200
+    call print_string
+    jmp .done
+
+.not_found:
+    mov si, msg_not_found
+    call print_string
+    jmp .done
+
+.disk_error:
+    mov si, msg_disk_error
+    call print_string
+
+.done:
     popa
     ret
 
@@ -277,16 +342,19 @@ cursor_pos dd 0
 buffer_pos dd 0
 command_buffer: times 80 db 0
 
-msg_welcome: db 'Mema-OS v0.05 | System Stable', 0
+msg_welcome: db 'Mema-OS v0.06 | Filesystem Enabled', 0
 msg_prompt: db '> ', 0
-msg_help: db 'Commands: help, cls', 0
+msg_help: db 'Commands: help, cls, reboot, about, panic, read', 0
 msg_unknown_cmd: db 'Unknown command.', 0
+msg_not_found: db 'File not found.', 0
+msg_disk_error: db 'Disk read error!', 0
 
 cmd_help: db 'help', 0
 cmd_cls: db 'cls', 0
 cmd_reboot: db 'reboot', 0
 cmd_about: db 'about', 0
 cmd_panic: db 'panic', 0
+cmd_read: db 'read', 0
 
 msg_reboot: db 'Rebooting...', 0
 msg_about: db 'Mema-OS v0.06', 0

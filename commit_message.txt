@@ -1,1 +1,1 @@
-feat: Expand kernel with reboot, about, and panic commands
+feat: Implement simple filesystem and read command

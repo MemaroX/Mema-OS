@@ -30,6 +30,11 @@ def create_image():
         f.write(boot_sector)
         f.write(kernel_sector)
 
+    # Add a simple file to the disk image
+    with open(disk_img_path, 'ab') as f:
+        f.write(b'hello.txt\0')
+        f.write(b'Hello from a file!\0')
+
     print(f"Created {disk_img_path} with boot sector ({len(boot_sector)} bytes) and kernel ({len(kernel_sector)} bytes).")
 
 if __name__ == '__main__':
