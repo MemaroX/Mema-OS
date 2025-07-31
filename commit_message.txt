@@ -1,1 +1,1 @@
-feat: Implement basic keyboard driver
+feat: Implement interactive command line
