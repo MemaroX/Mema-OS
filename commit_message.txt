@@ -1,1 +1,1 @@
-feat: Implement simple filesystem and read command
+docs: Create development progress log
