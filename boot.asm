@@ -16,8 +16,47 @@ start:
     int 0x13
     jc disk_error
 
-    ; Jump to kernel
-    jmp 0x8000
+    ; Enable A20 line
+    in al, 0x92
+    or al, 2
+    out 0x92, al
+
+    ; Load GDT
+    lgdt [gdt_descriptor]
+
+    ; Switch to protected mode
+    mov eax, cr0
+    or eax, 1
+    mov cr0, eax
+
+    ; Far jump to kernel
+    jmp 0x08:0x8000
+
+gdt_start:
+    ; Null descriptor
+    dq 0x0
+
+    ; Code segment descriptor
+    dw 0xFFFF    ; Limit (low)
+    dw 0x0000    ; Base (low)
+    db 0x00      ; Base (middle)
+    db 0x9A      ; Access byte
+    db 0xCF      ; Granularity
+    db 0x00      ; Base (high)
+
+    ; Data segment descriptor
+    dw 0xFFFF    ; Limit (low)
+    dw 0x0000    ; Base (low)
+    db 0x00      ; Base (middle)
+    db 0x92      ; Access byte
+    db 0xCF      ; Granularity
+    db 0x00      ; Base (high)
+
+gdt_end:
+
+gdt_descriptor:
+    dw gdt_end - gdt_start - 1
+    dd gdt_start
 
 disk_error:
     mov si, msg_disk_error
