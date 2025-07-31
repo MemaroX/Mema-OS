@@ -1,1 +1,1 @@
-feat: Initial 16-bit bootloader and kernel
+feat: Implement basic keyboard driver
