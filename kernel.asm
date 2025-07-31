@@ -13,6 +13,8 @@ start:
     mov ax, 0x10
     mov ds, ax
     mov es, ax
+    mov ss, ax
+    mov esp, 0x90000
 
     call remap_pic
     call setup_idt
@@ -185,7 +187,7 @@ clear_screen:
     mov byte [edi+1], WHITE_ON_BLACK
     add edi, 2
     loop .loop
-    mov dword [cursor_pos], VIDEO_MEMORY
+    mov dword [cursor_pos], 0
     popa
     ret
 
@@ -240,11 +242,11 @@ idt_descriptor:
 
 idt_start: times 256 * 8 db 0
 
-cursor_pos dd VIDEO_MEMORY
+cursor_pos dd 0
 buffer_pos dd 0
 command_buffer: times 80 db 0
 
-msg_welcome: db 'Mema-OS v0.04 | System Stable', 0
+msg_welcome: db 'Mema-OS v0.05 | System Stable', 0
 msg_prompt: db '> ', 0
 msg_help: db 'Commands: help, cls', 0
 msg_unknown_cmd: db 'Unknown command.', 0

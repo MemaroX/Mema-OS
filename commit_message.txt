@@ -1,1 +1,1 @@
-fix: Remap PIC to resolve interrupt conflicts and stabilize kernel
+fix: Correct disk read error and stabilize boot process
