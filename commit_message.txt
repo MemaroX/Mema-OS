@@ -1,1 +1,1 @@
-fix: Stabilize kernel with correct interrupt handling
+fix: Remap PIC to resolve interrupt conflicts and stabilize kernel

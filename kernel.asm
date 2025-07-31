@@ -4,11 +4,17 @@ org 0x8000
 VIDEO_MEMORY equ 0xb8000
 WHITE_ON_BLACK equ 0x0f
 
+PIC1_COMMAND equ 0x20
+PIC1_DATA    equ 0x21
+PIC2_COMMAND equ 0xA0
+PIC2_DATA    equ 0xA1
+
 start:
     mov ax, 0x10
     mov ds, ax
     mov es, ax
 
+    call remap_pic
     call setup_idt
     sti
 
@@ -45,6 +51,7 @@ keyboard_handler:
     mov [command_buffer + ebx], al
     inc dword [buffer_pos]
     call print_char
+    jmp .done
 
 .handle_backspace:
     mov ebx, [buffer_pos]
@@ -182,6 +189,30 @@ clear_screen:
     popa
     ret
 
+remap_pic:
+    mov al, 0x11
+    out PIC1_COMMAND, al
+    out PIC2_COMMAND, al
+
+    mov al, 0x20
+    out PIC1_DATA, al
+    mov al, 0x28
+    out PIC2_DATA, al
+
+    mov al, 0x04
+    out PIC1_DATA, al
+    mov al, 0x02
+    out PIC2_DATA, al
+
+    mov al, 0x01
+    out PIC1_DATA, al
+    out PIC2_DATA, al
+
+    mov al, 0x0
+    out PIC1_DATA, al
+    out PIC2_DATA, al
+    ret
+
 setup_idt:
     mov edi, idt_start
     mov ecx, 256
@@ -192,7 +223,7 @@ setup_idt:
     loop .init_idt_loop
 
     mov eax, keyboard_handler
-    mov ebx, 9 * 8 ; INT 9 (keyboard)
+    mov ebx, 0x21 * 8 ; INT 0x21 (IRQ 1 - keyboard)
     mov [idt_start + ebx], ax
     mov word [idt_start + ebx + 2], 0x08
     mov byte [idt_start + ebx + 4], 0
@@ -213,7 +244,7 @@ cursor_pos dd VIDEO_MEMORY
 buffer_pos dd 0
 command_buffer: times 80 db 0
 
-msg_welcome: db 'Mema-OS v0.03 | Interactive Mode Enabled', 0
+msg_welcome: db 'Mema-OS v0.04 | System Stable', 0
 msg_prompt: db '> ', 0
 msg_help: db 'Commands: help, cls', 0
 msg_unknown_cmd: db 'Unknown command.', 0
