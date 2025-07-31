@@ -1,1 +1,1 @@
-fix: Correct disk read error and stabilize boot process
+feat: Expand kernel with reboot, about, and panic commands

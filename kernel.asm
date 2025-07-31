@@ -94,6 +94,21 @@ process_command:
     call strcmp
     jc .is_cls
 
+    mov si, command_buffer
+    mov di, cmd_reboot
+    call strcmp
+    jc .is_reboot
+
+    mov si, command_buffer
+    mov di, cmd_about
+    call strcmp
+    jc .is_about
+
+    mov si, command_buffer
+    mov di, cmd_panic
+    call strcmp
+    jc .is_panic
+
     mov si, msg_unknown_cmd
     call print_string
     jmp .end_process
@@ -106,6 +121,22 @@ process_command:
 .is_cls:
     call clear_screen
     jmp .end_process
+
+.is_reboot:
+    mov si, msg_reboot
+    call print_string
+    ; Reboot by jumping to the reset vector
+    jmp 0xFFFF:0x0000
+
+.is_about:
+    mov si, msg_about
+    call print_string
+    jmp .end_process
+
+.is_panic:
+    mov si, msg_panic
+    call print_string
+    ud2 ; Undefined instruction to trigger a panic
 
 .end_process:
     call print_newline
@@ -253,6 +284,13 @@ msg_unknown_cmd: db 'Unknown command.', 0
 
 cmd_help: db 'help', 0
 cmd_cls: db 'cls', 0
+cmd_reboot: db 'reboot', 0
+cmd_about: db 'about', 0
+cmd_panic: db 'panic', 0
+
+msg_reboot: db 'Rebooting...', 0
+msg_about: db 'Mema-OS v0.06', 0
+msg_panic: db 'Kernel panic!', 0
 
 scancode_map:
     db 0, 0, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0x08, 0
